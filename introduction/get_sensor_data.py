@@ -16,10 +16,13 @@ class MyAgent(SparkAgent):
         tempeture = 0
         # YOUR CODE HERE
         # set angle and tempeture to current data of joint HeadYaw
-
-        print 'HeadYaw angle: ' + str(angle) + ' tempeture: ' + str(tempeture)
+        if "HeadYaw" in perception.joint :
+                angle = perception.joint["HeadYaw"]
+        if "HeadYaw" in perception.joint_temperature :
+                tempeture = perception.joint_temperature["HeadYaw"]
+        print 'HeadYaw angle: ' + str(angle) + ' tempeture: ' + str(tempeture) 
         return super(MyAgent, self).think(perception)
 
 if '__main__' == __name__:
-    agent = MyAgent()
-    agent.run()
+	agent= MyAgent()
+	agent.run()
