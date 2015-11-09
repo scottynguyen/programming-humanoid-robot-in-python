@@ -1,10 +1,13 @@
 #group: Daniel Runge, Scott Viet Phong Nguyen
 '''In this exercise you need to use the learned classifier to recognize current posture of robot
+
 * Tasks:
     1. load learned classifier in `PostureRecognitionAgent.__init__`
     2. recognize current posture in `PostureRecognitionAgent.recognize_posture`
+
 * Hints:
     Let the robot execute different keyframes, and recognize these postures.
+
 '''
 
 
@@ -15,6 +18,7 @@ import numpy as np
 import pickle
 from sklearn import svm
 from os import listdir, path
+from spark_agent import INVERSED_JOINTS
 
 
 class PostureRecognitionAgent(AngleInterpolationAgent):
@@ -24,13 +28,15 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
                  player_id=0,
                  sync_mode=True):
         super(PostureRecognitionAgent, self).__init__(simspark_ip, simspark_port, teamname, player_id, sync_mode)
-        ROBOT_POSE_CLF = '/programming-humanoid-robot-in-python/joint_control/robot_pose_data'
+        ROBOT_POSE_CLF = 'robot_pose.pkl'
         self.posture = 'unknown'
         self.joint_data=['LHipYawPitch', 'LHipRoll', 'LHipPitch', 'LKneePitch', 'RHipYawPitch', 'RHipRoll', 'RHipPitch', 'RKneePitch']
         self.posture_classifier = pickle.load(open(ROBOT_POSE_CLF))
+	self.lock= 0 # needed in standing_up
         
         ROBOT_POSE_DATA_DIR = 'robot_pose_data'
-        self.classes = listdir(ROBOT_POSE_DATA_DIR) #associates numerical value for posture with its actual name
+        self.classes = ["Back","Belly","Crouch","Frog","HeadBack","Knee","Left","Right","Sit","Stand","StandInit"]
+        #associates numerical value for posture with its actual name
         
 
     def think(self, perception):
@@ -49,13 +55,15 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
         
         posture = self.classes[int(self.posture_classifier.predict(measurement)[0])]
         #predict posture with classifier
-       # if self.posture_classifier.predict(measurement)[0] != 8.0:
-        #print self.posture_classifier.predict(measurement)
+        
+        #print posture
             
 
         return posture
 
 if __name__ == '__main__':
     agent = PostureRecognitionAgent()
+
     agent.keyframes = leftBackToStand()  # CHANGE DIFFERENT KEYFRAMES
+
     agent.run()

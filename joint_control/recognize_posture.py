@@ -32,6 +32,7 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
         self.posture = 'unknown'
         self.joint_data=['LHipYawPitch', 'LHipRoll', 'LHipPitch', 'LKneePitch', 'RHipYawPitch', 'RHipRoll', 'RHipPitch', 'RKneePitch']
         self.posture_classifier = pickle.load(open(ROBOT_POSE_CLF))
+	self.lock= 0 # needed in standing_up
         
         ROBOT_POSE_DATA_DIR = 'robot_pose_data'
         self.classes = ["Back","Belly","Crouch","Frog","HeadBack","Knee","Left","Right","Sit","Stand","StandInit"]
