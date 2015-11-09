@@ -1,12 +1,12 @@
-#group: Daniel Runge, Scott Viet Phong Nguyen
-
 '''In this exercise you need to implement an angle interploation function which makes NAO executes keyframe motion
+
 * Tasks:
     1. complete the code in `AngleInterpolationAgent.angle_interpolation`,
        you are free to use splines interploation or Bezier interploation,
        but the keyframes provided are for Bezier curves, you can simply ignore some data for splines interploation,
        please refer data format below for details.
     2. try different keyframes from `keyframes` folder
+
 * Keyframe data format:
     keyframe := (names, times, keys)
     names := [str, ...]  # list of joint names
@@ -19,7 +19,6 @@
     # preceding the point, the second describes the curve following the point.
 '''
 
-#this has been written in cooperation with Finn Mier, 358998
 
 from pid import PIDAgent
 from keyframes import hello
@@ -57,10 +56,8 @@ class AngleInterpolationAgent(PIDAgent):
     def angle_interpolation(self, keyframes):
         target_joints = {}
         
-        # YOUR CODE HERE
-        
         '''
-       The following methods rely heavily on some mathematical conjectures
+        The following methods rely heavily on some mathematical conjectures
        that we have not proven ourselves. It also conjured up some numerical
        difficulties we had to deal with. We did it that way, because we simply
        could not come up with any closed-formula translation function for the given
@@ -70,13 +67,12 @@ class AngleInterpolationAgent(PIDAgent):
        Hence we had to actually calculate the t value for the given time curTime
        by finding the roots of x-value parameterization of the Bezier curve
        (see the following code and comments).
-       '''        
+        '''
         
+        # YOUR CODE HERE
         time = self.perception.time - self.myTime
         (names, times, keys) = keyframes
         
-        #the indent seems to be messed up here, now :/
-        #Trying to correct it results in errors right now, so I am not touching it
         for i, name in enumerate(names):
 	  curTimes = times[i]
 	  
@@ -92,7 +88,7 @@ class AngleInterpolationAgent(PIDAgent):
 	    '''
 	    continue
 	  
-	  #getting relevant Indices
+	  #getting relevant indices
 	  eIndex = len([x for x in curTimes if x<time])
 	  sIndex = eIndex - 1
 	  
@@ -108,27 +104,32 @@ class AngleInterpolationAgent(PIDAgent):
 	  bezierMatrix = np.array([[1,0,0,0],[-3,3,0,0],[3,-6,3,0],[-1,3,-3,1]])
 	  x = np.array([p0x,p1x,p2x,p3x])
 	  y = np.array([p0y,p1y,p2y,p3y])
+	  
+	  '''
+	   getting t value candidates (solutions for the polynomial) for curTime
+           curTime being the actual time variable on the x-axis, we assume that
+           that the Bezier parameterization of the 4 interpolation points yields
+           one relevant solution for the parameterization variable t\in[0,1]
+           We calculate said t parameter by setting the x-Bezier-parameterization
+           equal to curTime, i.e. subtract curTime from the polynomial and
+           finding its roots
+	  '''
 
 	  #getting t value candidates (solutions for the polynomial) for curTime
-       #curTime being the actual time variable on the x-axis, we assume that
-       #that the Bezier parameterization of the 4 interpolation points yields
-       #one relevant solution for the parameterization variable t\in[0,1]
-       #We calculate said t parameter by setting the x-Bezier-parameterization
-       #equal to curTime, i.e. subtract curTime from the polynomial and
-       #finding its roots
 	  coefficientsX = np.dot(bezierMatrix, x)
 	  coefficientsX[0] -= time
 	  candidates = np.polynomial.polynomial.polyroots(coefficientsX)
-   
-       #formulating the problem using matrices and dot products, we accumulate
-       #some numerical error along the way which might even be amplified
-       #by the time we call np.roots
-       #The relevant solutions - if they exist - are within the interval [0,1]
-       #and therefore our candidates for solutions for t should in principle be real
-       #solutions (or the real parts of complex solutions?) between 0 and 1
-       #within some error margin epsilon that we had to figure out
-       #by doing some experimentation
-   
+	  
+	  '''
+	   formulating the problem using matrices and dot products, we accumulate
+           some numerical error along the way which might even be amplified
+           by the time we call np.roots
+           The relevant solutions - if they exist - are within the interval [0,1]
+           and therefore our candidates for solutions for t should in principle be real
+          solutions (or the real parts of complex solutions?) between 0 and 1
+          within some error margin epsilon that we had to figure out
+          by doing some experimentation
+	  '''
 	  candidates = [x.real for x in candidates if -(epsilon)<=x.real<=1+(epsilon) and x.imag == 0] #error margin uncertain
 	   
 	  ''' #testing t values close to boundaries
@@ -148,7 +149,7 @@ class AngleInterpolationAgent(PIDAgent):
 	  	candidates = np.asarray([(x,np.abs(x-0.5)) for x in candidates],dtype = [("value", float),("distance", float)]) 
 	  	candidates = np.sort(candidates, order="distance") #sorts in ascending order according to distance to 0.5
 	  	t = candidates[0][0]
-	  else: #if there is only one solution, we assume there is only one solution
+	  else: #if there's only one solution it must be the right one
 	  	t = candidates[0]
 	  
 	  if t < 0.: #clip values marginally smaller than 0 to 0
@@ -156,17 +157,10 @@ class AngleInterpolationAgent(PIDAgent):
 	  if t > 1.: #clip values marginally larger than 1 to 1
 	    t = 1.
 	    
-	  #the corresponding angle value to the parameter t can now simply be
-       #computed by plugging t into the parameterized Bezier curve
+	  #getting y values
 	  coefficientsY = np.dot(bezierMatrix, y)
 	  result = np.dot(np.array([1, t, t**2, t**3]),coefficientsY)
-       
-       #some joints are reserved, apparently, so the affected joints' input
-       #needs to be reversed
-	  if name in INVERSED_JOINTS:
-	    target_joints[name] = -result
-	  else:
-	    target_joints[name] = result
+	  target_joints[name] = result
 	  
 	  '''
 	  #collecting plot data
@@ -183,5 +177,5 @@ class AngleInterpolationAgent(PIDAgent):
 
 if __name__ == '__main__':
     agent = AngleInterpolationAgent()
-    agent.keyframes = hello()  # CHANGE DIFFERENT KEYFRAMES
+    agent.keyframes = wipe_forehead()  # CHANGE DIFFERENT KEYFRAMES
     agent.run()

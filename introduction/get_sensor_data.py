@@ -13,15 +13,15 @@ from spark_agent import SparkAgent
 class MyAgent(SparkAgent):
     def think(self, perception):
         angle = 0
-        tempeture = 0
+        temperature = 0
         # YOUR CODE HERE
         # set angle and tempeture to current data of joint HeadYaw
-        if "HeadYaw" in perception.joint :
-                angle = perception.joint["HeadYaw"]
-        if "HeadYaw" in perception.joint_temperature :
-                tempeture = perception.joint_temperature["HeadYaw"]
+        
+        angle = perception.joint["HeadYaw"]
+        temperature = perception.joint_temperature["HeadYaw"]
 
-        print 'HeadYaw angle: ' + str(angle) + ' tempeture: ' + str(tempeture)
+        print 'HeadYaw angle: ' + str(angle) + ' temperature: ' + str(temperature)
+        #print '\n GPS1: '+str(perception.fsr['AngleX']) +', GPS2: '+str(perception.fsr['AngleY'])
         return super(MyAgent, self).think(perception)
 
 if '__main__' == __name__:
