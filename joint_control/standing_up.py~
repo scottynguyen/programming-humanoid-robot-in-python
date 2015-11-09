@@ -21,7 +21,7 @@ class StandingUpAgent(PostureRecognitionAgent):
             	self.keyframes = leftBackToStand.leftBackToStand()
         while posture == "Belly":
 		self.keyframes = rightBellyToStand.leftBackToStand()
-            	self.keyframes = leftBellyToStand.leftBellyToStand()
+            self.keyframes = leftBellyToStand.leftBellyToStand()
         
 
 class TestStandingUpAgent(StandingUpAgent):
