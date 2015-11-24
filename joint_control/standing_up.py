@@ -12,19 +12,20 @@ class StandingUpAgent(PostureRecognitionAgent):
 	if self.lock == 0 and self.posture != "Stand":
         	self.standing_up()
 	if self.posture == "Stand":
+		print "NOOOOO"
 		self.keyframes = wipe_forhead.wipe_forhead()
 		self.lock = 0
         return super(PostureRecognitionAgent, self).think(perception)
 
     def standing_up(self):
-        posture = self.posture
+        posture = self.recognize_posture(self.perception)
         # YOUR CODE HERE
-        
         if posture == "Back" and self.lock == 0:
-			self.keyframes = rightBackToStand.leftBackToStand()
+			self.keyframes = leftBackToStand()
 			self.lock = 1
         if posture == "Belly" and self.lock == 0:
-            		self.keyframes = leftBellyToStand.leftBellyToStand()
+			print " YEEES"
+            		self.keyframes = rightBellyToStand()
         		self.lock =1
 
 class TestStandingUpAgent(StandingUpAgent):

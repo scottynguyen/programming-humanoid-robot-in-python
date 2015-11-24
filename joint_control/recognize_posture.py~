@@ -14,6 +14,8 @@
 from angle_interpolation import AngleInterpolationAgent
 from keyframes import hello
 from keyframes import leftBackToStand
+from keyframes import rightBackToStand
+from keyframes import leftBellyToStand
 import numpy as np
 import pickle
 from sklearn import svm
@@ -47,16 +49,16 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
         posture = 'unknown'
         
         measurement = np.zeros((10,))
-        measurement[0] = perception.imu[0]
-        measurement[1] = perception.imu[1] #insert values for AngleX and AngleY
+        measurement[8] = perception.imu[0]
+        measurement[9] = perception.imu[1] #insert values for AngleX and AngleY
         
-        for i,j in enumerate(measurement[2:]):
+        for i,j in enumerate(measurement[:8]):
             measurement[i] = perception.joint[self.joint_data[i]]
         
         posture = self.classes[int(self.posture_classifier.predict(measurement)[0])]
         #predict posture with classifier
         
-        #print posture
+        print posture
             
 
         return posture
@@ -64,6 +66,6 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
 if __name__ == '__main__':
     agent = PostureRecognitionAgent()
 
-    agent.keyframes = leftBackToStand()  # CHANGE DIFFERENT KEYFRAMES
+    agent.keyframes = rightBackToStand()  # CHANGE DIFFERENT KEYFRAMES
 
     agent.run()
