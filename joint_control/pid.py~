@@ -19,6 +19,7 @@ from collections import deque
 from spark_agent import SparkAgent, JOINT_CMD_NAMES
 
 
+
 class PIDController(object):
     '''a discretized PID controller, it controls an array of servos,
        e.g. input is an array and output is also an array
@@ -30,21 +31,23 @@ class PIDController(object):
         @param delay: delay in number of steps
         '''
         self.dt = dt
-        self.u = np.zeros(size)
         self.e1 = np.zeros(size)
         self.e2 = np.zeros(size)
         # ADJUST PARAMETERS BELOW
-        delay = 0
-        self.Kp = 50
-        self.Ki = -0.1
-        self.Kd = -0.1
-        self.y = deque(np.zeros(size), maxlen=delay + 1)
-
+        delay = 1
+        self.Kp = 70
+        self.Ki = 0
+        self.Kd = 0
+        self.u = deque(np.zeros(size), maxlen=delay + 1) #queue for sent signals (to account for sent signals in prediction with delay > 1)
+	self.test = np.zeros(size)
     def set_delay(self, delay):
         '''
         @param delay: delay in number of steps
         '''
-        self.y = deque(self.y, delay + 1)
+        self.u = deque(self.u, delay + 1)
+        while len(self.u) < delay + 1 :
+	  self.u.appendleft(self.u[0])
+
 
     def control(self, target, sensor):
         '''apply PID control
@@ -52,30 +55,25 @@ class PIDController(object):
         @param sensor: current values from sensor
         @return control signal
         '''
-        # YOUR CODE HERE
-        # I don't have the slightest idea what I am supposed to be doing here since I really
-        # did not see any math or proper instructions on what it is we are trying to do here,
-        # so I am just going to copy some formula you displayed in the "lecture"
-        # and see if that's what you want
+        # prediction calculation
+        prediction = sensor
+        vOld = self.u.popleft() #ignore the oldest signal for prediction calculation
+        for v in self.u: 
+	  #print v, self.dt
+	  prediction += (v * self.dt) #account for already sent signals
+        self.u.appendleft(vOld)
         
-        e = target - sensor
-        # I am assuming this is some kind of error function differentiating
-        # between a set of joint parameters that we want and one that our sensors
-        # are reading
+        # speed calculation
+        e = target - prediction
         
-        self.u = self.u + (self.Kp + self.Ki * self.dt) * e - (self.Kp + 2*self.Kd / self.dt) * self.e1 + (self.Kd / self.dt) * self.e2
-        # this seems to be some kind of control function that delivers the joint instructions
-        # whilst accounting for the set of parameters given (whose purpose is as clear to me as an English autumn day)
-        
-        self.e2 = self.e1 # using e1 and e2 for the error values for the last step and the step before that respectively
-        self.e1 = e
-        
-        # I am really lost here what you mean with "prediction". I don't remember you having
-        # defined it properly nor having shown us (mathematically!) what it means,
-        # how we apply it and to what....
-        # So I suppose I will ignore it for now.
-        
-        return self.u
+        #notice that while self.u is a list of vectors, u is just one vector
+	u = self.u[-1] + (self.Kp + self.Ki * self.dt + self.Kd / self.dt) * e - (self.Kp + 2*self.Kd/self.dt) * self.e1 + (self.Kd/self.dt) * self.e2
+	self.u.popleft() #delete oldest signal
+	
+	self.u.append(u) # queing sent signal (speed) for better prediction with delays > 1
+	self.e2 = self.e1
+	self.e1 = e
+        return u
 
 
 class PIDAgent(SparkAgent):

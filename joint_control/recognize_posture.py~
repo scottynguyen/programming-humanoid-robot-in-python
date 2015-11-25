@@ -1,4 +1,3 @@
-#group: Daniel Runge, Scott Viet Phong Nguyen
 '''In this exercise you need to use the learned classifier to recognize current posture of robot
 
 * Tasks:
@@ -14,14 +13,12 @@
 from angle_interpolation import AngleInterpolationAgent
 from keyframes import hello
 from keyframes import leftBackToStand
-from keyframes import rightBackToStand
-from keyframes import leftBellyToStand
 import numpy as np
 import pickle
 from sklearn import svm
-from os import listdir, path
-from spark_agent import INVERSED_JOINTS
 
+featureNames = ['LHipYawPitch', 'LHipRoll', 'LHipPitch', 'LKneePitch', 'RHipYawPitch', 'RHipRoll', 'RHipPitch', 'RKneePitch','AngleX', 'AngleY']
+ROBOT_POSE_CLF = 'robot_pose.pkl'
 
 class PostureRecognitionAgent(AngleInterpolationAgent):
     def __init__(self, simspark_ip='localhost',
@@ -30,16 +27,8 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
                  player_id=0,
                  sync_mode=True):
         super(PostureRecognitionAgent, self).__init__(simspark_ip, simspark_port, teamname, player_id, sync_mode)
-        ROBOT_POSE_CLF = 'robot_pose.pkl'
         self.posture = 'unknown'
-        self.joint_data=['LHipYawPitch', 'LHipRoll', 'LHipPitch', 'LKneePitch', 'RHipYawPitch', 'RHipRoll', 'RHipPitch', 'RKneePitch']
-        self.posture_classifier = pickle.load(open(ROBOT_POSE_CLF))
-	self.lock= 0 # needed in standing_up
-        
-        ROBOT_POSE_DATA_DIR = 'robot_pose_data'
-        self.classes = ["Back","Belly","Crouch","Frog","HeadBack","Knee","Left","Right","Sit","Stand","StandInit"]
-        #associates numerical value for posture with its actual name
-        
+        self.posture_classifier = pickle.load(open(ROBOT_POSE_CLF))  # LOAD YOUR CLASSIFIER
 
     def think(self, perception):
         self.posture = self.recognize_posture(perception)
@@ -47,25 +36,21 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
 
     def recognize_posture(self, perception):
         posture = 'unknown'
+        # YOUR CODE HERE
         
-        measurement = np.zeros((10,))
-        measurement[8] = perception.imu[0]
-        measurement[9] = perception.imu[1] #insert values for AngleX and AngleY
+        # read data
+        data = np.empty(len(featureNames))
+        data[-2] = perception.imu[0]
+        data[-1] = perception.imu[1]
+        for i, feature in enumerate(featureNames[:-2]):
+	  data[i] = perception.joint[feature]
         
-        for i,j in enumerate(measurement[:8]):
-            measurement[i] = perception.joint[self.joint_data[i]]
-        
-        posture = self.classes[int(self.posture_classifier.predict(measurement)[0])]
-        #predict posture with classifier
-        
-        print posture
-            
-
+        #predict
+        posture = self.posture_classifier.predict(data)
+        #print posture
         return posture
 
 if __name__ == '__main__':
     agent = PostureRecognitionAgent()
-
-    agent.keyframes = rightBackToStand()  # CHANGE DIFFERENT KEYFRAMES
-
+    agent.set_keyframes(leftBackToStand())  # CHANGE DIFFERENT KEYFRAMES
     agent.run()

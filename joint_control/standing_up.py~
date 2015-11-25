@@ -1,17 +1,22 @@
 '''In this exercise you need to put all code together to make the robot be able to stand up by its own.
+
 * Task:
     complete the `StandingUpAgent.standing_up` function, e.g. call keyframe motion corresponds to current posture
+
 '''
 
 
 from recognize_posture import PostureRecognitionAgent
-from keyframes import leftBackToStand, leftBellyToStand, rightBackToStand, rightBellyToStand, wipe_forehead
+from keyframes import leftBackToStand
+from keyframes import rightBackToStand
+from keyframes import leftBellyToStand
 
 class StandingUpAgent(PostureRecognitionAgent):
     def think(self, perception):
 	if self.lock == 0 and self.posture != "Stand":
         	self.standing_up()
 	if self.posture == "Stand":
+		print "NOOOOO"
 		self.keyframes = wipe_forhead.wipe_forhead()
 		self.lock = 0
         return super(PostureRecognitionAgent, self).think(perception)
@@ -20,12 +25,14 @@ class StandingUpAgent(PostureRecognitionAgent):
         posture = self.recognize_posture(self.perception)
         # YOUR CODE HERE
         if posture == "Back" and self.lock == 0:
+			print "Back"
 			self.keyframes = leftBackToStand()
 			self.lock = 1
         if posture == "Belly" and self.lock == 0:
 			print " YEEES"
             		self.keyframes = rightBellyToStand()
         		self.lock =1
+
 
 class TestStandingUpAgent(StandingUpAgent):
     '''this agent turns off all motor to falls down in fixed cycles
@@ -39,20 +46,24 @@ class TestStandingUpAgent(StandingUpAgent):
         self.stiffness_on_off_time = 0
         self.stiffness_on_cycle = 10  # in seconds
         self.stiffness_off_cycle = 3  # in seconds
+        self.stop = 1
 
     def think(self, perception):
         action = super(TestStandingUpAgent, self).think(perception)
-        time_now = perception.time
-        if time_now - self.stiffness_on_off_time < self.stiffness_off_cycle:
-            action.stiffness = {j: 0 for j in self.joint_names}  # turn off joints
-        else:
-            action.stiffness = {j: 1 for j in self.joint_names}  # turn on joints
-        if time_now - self.stiffness_on_off_time > self.stiffness_on_cycle + self.stiffness_off_cycle:
-            self.stiffness_on_off_time = time_now
-
+	time_now = perception.time
+	if self.stop:
+	  if time_now - self.stiffness_on_off_time < self.stiffness_off_cycle:
+	      action.stiffness = {j: 0 for j in self.joint_names}  # turn off joints
+	  else:
+	      action.stiffness = {j: 1 for j in self.joint_names}  # turn on joints
+	      self.stop = 0
+	  if time_now - self.stiffness_on_off_time > self.stiffness_on_cycle + self.stiffness_off_cycle:
+	      self.stiffness_on_off_time = time_now
+	  
         return action
 
 
 if __name__ == '__main__':
     agent = TestStandingUpAgent()
+    agent.keyframes= leftBackToStand()
     agent.run()
