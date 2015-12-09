@@ -24,12 +24,32 @@ class InverseKinematicsAgent(ForwardKinematicsAgent):
         '''
         joint_angles = []
         # YOUR CODE HERE
+	# implement the Cyclic Coordinate Descent algorithm
+	target = (transform[0][3],transform[1][3],transform[2][3])
+	joints = self.chains[effector_name]
+	num_of_links = len(self.chains[effector_name])
+	end_pos = self.jointLinks[joints[-1]]
+	for i in range(1,num_of_links):
+		curr_pos= self.jointLinks[joints[-i]]
+		t= numpy.array(target)
+		e= numpy.array(end_pos)
+		c=numpy.array(curr_pos)
+		a = (e-c)/numpy.linalg.norm(e-c)
+		b = (t-c)/numpy.linalg.norm(t-c)
+		teta = numpy.arccos(numpy.dot(a,b))
+		# check the direction in which we have to rotate
+		direction =numpy.cross(a,b)
+		if direction[2] <0:
+			teta= -1*teta
+		joint_angles.append(teta)
         return joint_angles
 
     def set_transforms(self, effector_name, transform):
         '''solve the inverse kinematics and control joints use the results
         '''
         # YOUR CODE HERE
+        angles = self.inverse_kinematics(effector_name,transform)
+        # not sure how to set the keyframes 
         self.keyframes = ([], [], [])  # the result joint angles have to fill in
 
 if __name__ == '__main__':
